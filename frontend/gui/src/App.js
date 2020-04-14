@@ -1,26 +1,84 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { Component } from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { Layout } from 'antd';
+
+import BaseRouter from './routes';
+import * as actions from './store/actions/auth';
+import Chat from './containers/Chat';
+import WebSocketInstance from './websocket';
+import Navbar from './components/Navbar';
+import SidePanel from './containers/SidePanel';
+
+import 'antd/dist/antd.css';
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const { Header, Content, Sider, Footer } = Layout;
+
+class App extends Component {
+
+  componentDidMount() {
+    console.log('inside componentDidMount (App.js)')
+    WebSocketInstance.connect();
+    this.props.onTryAutoSignup();
+  }
+
+  componentDidUpdate() {
+    console.log('inside componentDidUpdate (App.js)')
+  }
+
+  render() {
+    return (
+      <div>
+        <Router>
+          <Layout className="layout">
+            <Header>
+              <Navbar {...this.props} />
+            </Header>
+            <Layout>
+              {
+                this.props.isAuthenticated
+                ?
+                <Sider>
+                  <SidePanel {...this.props}/>
+                </Sider>
+                :
+                <div></div>
+              }
+              <Content style={{ padding: '30px 30px' }}>
+                <div className="site-layout-content">
+                  <BaseRouter />
+                </div>
+              </Content>
+            </Layout>
+            <Footer>footer</Footer>
+          </Layout>
+          {
+            this.props.isAuthenticated
+            ?
+            <Chat {...this.props} />
+            :
+            <div></div>
+          }
+        </Router>
+      </div>
+    );
+  }
 }
 
-export default App;
+const mapStateToProps = state => {
+  return {
+    token: state.token,
+    isAuthenticated: state.token !== null,
+    username: state.username
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onTryAutoSignup: () => dispatch(actions.authCheckState()),
+    logout: () => dispatch(actions.logout())
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(App);
