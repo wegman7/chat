@@ -29,14 +29,14 @@ const authFail = (state, action) => {
     return updateObject(state, {
         error: action.error,
         loading: false
-    })
+    });
 }
 
 const authLogout = (state, action) => {
     return updateObject(state, {
         token: null,
         username: null
-    })
+    });
 }
 
 const reducer = (state=initialState, action) => {

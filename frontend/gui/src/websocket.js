@@ -1,81 +1,71 @@
-class WebSocketService {
+class WebSocketInstance {
 
-    static instance = null;
-    callbacks = {};
+    constructor(chat_id) {
+        this.chat_id = chat_id
+        const path = 'ws://127.0.0.1:8000/ws/chat/' + chat_id + '/';
+        this.socket_ref = new WebSocket(path);
 
-    static getInstance() {
-        if (!WebSocketService.instance) {
-            WebSocketService.instance = new WebSocketService()
-        }
-        return WebSocketService.instance;
+        this.socket_ref.onopen = this.onOpen.bind(this);
+        this.socket_ref.onerror = this.onError.bind(this);
+        this.socket_ref.onmessage = this.onMessage.bind(this);
+        this.socket_ref.onclose = this.onClose.bind(this);
+    }
+    
+    onOpen = (event) => {
+        console.log('open', event);
+        this.fetchMessages();
+    }
+    onError = (error) => {
+        console.log('error', error);
+    }
+    onMessage = (event) => {
+        console.log('message', event);
+        let data = JSON.parse(event.data);
+        this.types[data.type](data);
+
+    }
+    onClose = (event) => {
+        console.log('close', event);
+    }
+    returnReadyState = () => {
+        return this.socket_ref.readyState;
     }
 
-    constructor() {
-        this.socketRef = null;
+    addCallbacks = (renderMessages, addResponseMessageHandler) => {
+        this.callbacks = {
+            renderMessages: renderMessages,
+            addResponseMessageHandler: addResponseMessageHandler
+        }
+        this.addTypes();
     }
 
-    connect() {
-        const path = 'ws://127.0.0.1:8000/ws/chat/test/';
-        console.log('connecting...')
-        this.socketRef = new WebSocket(path);
-        this.socketRef.onopen = () => {
-            console.log('websocket open');
-        };
-        this.socketNewMessage(JSON.stringify({
-          command: 'fetch_messages'
-        }));
-        this.socketRef.onmessage = event => {
-            this.socketNewMessage(event.data);
-        }
-        this.socketRef.onerror = error => {
-            console.log(error.message);
-        }
-        this.socketRef.onclose = () => {
-            console.log('websocket is closed');
-            this.connect();
-        }
-    }
-
-    socketNewMessage(data) {
-        const parsedData = JSON.parse(data);
-        const command = parsedData.command;
-        if (Object.keys(this.callbacks).length === 0) {
-            return;
-        }
-        if (command === 'messages') {
-            this.callbacks[command](parsedData.messages);
-        }
-        if (command === 'new_message') {
-            this.callbacks[command](parsedData.message);
+    addTypes = () => {
+        this.types = {
+            old_messages: this.callbacks.renderMessages,
+            new_message: this.callbacks.addResponseMessageHandler
         }
     }
 
-    fetchMessages(username) {
-        this.sendMessage({ command: 'fetch_messages', username: username })
-    }
-
-    newChatMessage(message) {
-        this.sendMessage({ command: 'new_message', from: message.from, message: message.content })
-    }
-
-    addCallbacks(messagesCallback, newMessageCallback) {
-        this.callbacks['messages'] = messagesCallback;
-        this.callbacks['new_message'] = newMessageCallback;
-    }
-
-    sendMessage(data) {
-        try {
-            this.socketRef.send(JSON.stringify({ ...data }))
-        } catch (error) {
-            console.log(error.message);
+    newMessage = (newMessage) => {
+        let message = {
+            command: 'new_message',
+            author: newMessage.from,
+            content: newMessage.content
         }
+        this.sendMessage(message);
     }
 
-    state() {
-        return this.socketRef.readyState;
+    fetchMessages = () => {
+        let message = {
+            command: 'fetch_messages',
+            chat_id: this.chat_id
+        }
+        this.sendMessage(message);
+    }
+
+    sendMessage = (data) => {
+        this.socket_ref.send(JSON.stringify(data));
     }
 }
-
-const WebSocketInstance = WebSocketService.getInstance();
 
 export default WebSocketInstance;

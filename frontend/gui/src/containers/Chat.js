@@ -1,51 +1,23 @@
 import React, { Component } from 'react';
-import { Widget, addResponseMessage, addUserMessage } from 'react-chat-widget';
-import WebSocketInstance from '../websocket';
+import { Widget, addResponseMessage, addUserMessage, dropMessages } from 'react-chat-widget';
 
 import 'react-chat-widget/lib/styles.css';
 
 class Chat extends Component {
 
-    constructor(props) {
-        super(props)
-        this.state = {}
+    state = {}
 
-        this.waitForSocketConnection(() => {
-            WebSocketInstance.addCallbacks(
-                this.setMessages.bind(this),
-                this.addMessage.bind(this),
-            )
-            WebSocketInstance.fetchMessages(this.props.currentUser);
-        });
-        this.sendMessageHandler = this.sendMessageHandler.bind(this);
+    componentDidMount() {
+        this.props.socket.addCallbacks(this.renderMessages, this.addResponseMessageHandler);
     }
 
-    waitForSocketConnection(callback) {
-        const component = this;
-        setTimeout(
-            function() {
-                if (WebSocketInstance.state() === 1) {
-                    console.log('connection is secure');
-                    callback();
-                    return;
-                } else {
-                    console.log('waiting for connection');
-                    component.waitForSocketConnection(callback);
-                }
-        }, 100);
+    componentDidUpdate() {
+        this.props.socket.addCallbacks(this.renderMessages, this.addResponseMessageHandler);
+        dropMessages();
     }
 
-    addMessage(message) {
-        this.setState({
-            messages: [...this.state.messages, message]
-        });
-    }
-
-    setMessages(messages) {
-        this.setState({ messages: messages.reverse() });
-    }
-
-    renderMessages = (messages) => {
+    renderMessages = (data) => {
+        let messages = data.messages
         const currentUser = this.props.username;
         if (messages === undefined) { return; }
         for (let i = 0; i < messages.length; i++) {
@@ -63,25 +35,23 @@ class Chat extends Component {
             from: author,
             content: message_text
         }
-        WebSocketInstance.newChatMessage(messageObject);
+        this.props.socket.newMessage(messageObject);
+    }
+
+    addResponseMessageHandler = (data) => {
+        let message = JSON.parse(data.message)
+        if (message.author !== this.props.username) {
+            addResponseMessage(message.content);
+        }
     }
 
     handleNewUserMessage = (newMessage) => {
         console.log(`New message incoming! ${newMessage}`);
-        this.sendMessageHandler(newMessage);
         // Now send the message throught the backend API
+        this.sendMessageHandler(newMessage);
     }
-
-    i = 0;
     
     render() {
-        // i have to put this.i in here or else it will load all the messages every time a new message is added
-        this.i++;
-        console.log(this.i);
-        if (this.i < 3) {
-            const messages = this.state.messages;
-            this.renderMessages(messages);
-        }
 
         return (
             <div className="App">

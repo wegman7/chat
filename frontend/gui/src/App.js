@@ -6,9 +6,9 @@ import { Layout } from 'antd';
 import BaseRouter from './routes';
 import * as actions from './store/actions/auth';
 import Chat from './containers/Chat';
-import WebSocketInstance from './websocket';
 import Navbar from './components/Navbar';
 import SidePanel from './containers/SidePanel';
+import WebSocketInstance from './websocket';
 
 import 'antd/dist/antd.css';
 import './App.css';
@@ -17,17 +17,28 @@ const { Header, Content, Sider, Footer } = Layout;
 
 class App extends Component {
 
+  state = {};
+
   componentDidMount() {
     console.log('inside componentDidMount (App.js)')
-    WebSocketInstance.connect();
     this.props.onTryAutoSignup();
+    this.setState({ renderChat: false })
   }
 
   componentDidUpdate() {
     console.log('inside componentDidUpdate (App.js)')
   }
 
+  initializeChat = (chat_id) => {
+    let socket = new WebSocketInstance(chat_id);
+    this.setState({
+      'socket': socket,
+      'renderChat': true
+    });
+  }
+
   render() {
+
     return (
       <div>
         <Router>
@@ -40,7 +51,7 @@ class App extends Component {
                 this.props.isAuthenticated
                 ?
                 <Sider>
-                  <SidePanel {...this.props}/>
+                  <SidePanel {...this.props} initializeChat={this.initializeChat}/>
                 </Sider>
                 :
                 <div></div>
@@ -54,9 +65,9 @@ class App extends Component {
             <Footer>footer</Footer>
           </Layout>
           {
-            this.props.isAuthenticated
+            this.state.renderChat
             ?
-            <Chat {...this.props} />
+            <Chat {...this.props} socket={this.state.socket} />
             :
             <div></div>
           }

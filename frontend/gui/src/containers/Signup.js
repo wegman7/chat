@@ -9,17 +9,17 @@ class Signup extends Component {
         this.handleSubmit = this.handleSubmit.bind(this);
     }
 
-    // componentDidMount() {
-    //     if (this.props.isAuthenticated) {
-    //         this.props.history.push('/');
-    //     }
-    // }
+    componentDidMount() {
+        if (this.props.isAuthenticated) {
+            this.props.history.push('/');
+        }
+    }
 
-    // componentDidUpdate() {
-    //     if (this.props.isAuthenticated) {
-    //         this.props.history.push('/');
-    //     }
-    // }
+    componentDidUpdate() {
+        if (this.props.isAuthenticated) {
+            this.props.history.push('/');
+        }
+    }
 
     handleSubmit(event) {
         const username = event.target.username.value;

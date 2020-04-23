@@ -16,10 +16,15 @@ class SidePanel extends Component {
 
     grabFromAPI() {
         if (this.props.token) {
-            axios.get('http://127.0.0.1:8000/api/users')
+            axios.get('/api/chat/', {
+                headers: {
+                    Authorization: `Token ${this.props.token}`
+                }
+            })
                 .then(response => {
                     this.setState({
-                        'users': response.data.filter(user => user.username !== this.props.username)
+                        // 'contact': response.data.filter(user => user.user.username === this.props.username)[0]
+                        'chats': response.data.filter(chat => chat.participants_usernames.includes('wegman7'))
                     });
                 })
                 .catch(error => {
@@ -30,17 +35,25 @@ class SidePanel extends Component {
 
     render() {
 
-        let listUsers = ' ';
-        if (this.state.users !== undefined) {
-            listUsers = this.state.users.map(user => 
-                <Menu.Item key={user.id}>{user.username}</Menu.Item>
+        let listChats = ' ';
+        if (this.state.chats !== undefined) {
+            listChats = this.state.chats.map(chat => 
+                <Menu.Item key={chat.id} onClick={() => this.props.initializeChat(chat.id)}>
+                    {chat.participants_usernames.filter(
+                        participant_username => (participant_username !== this.props.username))
+                        .map(
+                            username => <span>{username} </span>
+                        )}
+                </Menu.Item>
             );
         }
 
         return (
-            <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
-                {listUsers}
-            </Menu>
+            <div>
+                <Menu theme="dark" mode="inline" defaultSelectedKeys={['1']}>
+                    {listChats}
+                </Menu>
+            </div>
         )
     }
 }

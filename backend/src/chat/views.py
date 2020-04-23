@@ -1,12 +1,7 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 
-# def index(request):
-#     return render(request, 'chat/index.html', {})
+from .models import Chat
 
-# @login_required
-# def room(request, room_name):
-#     return render(request, 'chat/room.html', {
-#         'room_name': room_name,
-#         'username': request.user.username
-#     })
+def get_last_10_messages(chatId):
+    chat = get_object_or_404(Chat, id=chatId)
+    return chat.messages.order_by('-timestamp').all()[:10]

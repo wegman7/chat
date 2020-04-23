@@ -6,6 +6,7 @@ function Navbar(props) {
 
     const buttonClicked = () => {
         props.logout();
+        props.disconnectFromChat();
     }
 
     return (
